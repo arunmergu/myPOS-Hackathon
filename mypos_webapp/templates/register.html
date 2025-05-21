@@ -1,0 +1,81 @@
+{% extends "layout.html" %}
+
+{% block title %}Register{% endblock %}
+
+{% block auth_content %}
+<div class="row">
+    <div class="col-md-6 offset-md-3">
+        <div class="card">
+            <div class="card-header bg-primary text-white">
+                <h2 class="mb-0">Create an Account</h2>
+            </div>
+            <div class="card-body">
+                <form method="POST" action="">
+                    {{ form.hidden_tag() }}
+                    <div class="mb-3">
+                        <label for="{{ form.username.id }}" class="form-label">Username</label>
+                        {{ form.username(class="form-control", placeholder="Choose a username") }}
+                        {% if form.username.errors %}
+                            <div class="text-danger">
+                                {% for error in form.username.errors %}
+                                    <span>{{ error }}</span>
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                    </div>
+                    <div class="mb-3">
+                        <label for="{{ form.email.id }}" class="form-label">Email</label>
+                        {{ form.email(class="form-control", placeholder="Enter your email") }}
+                        {% if form.email.errors %}
+                            <div class="text-danger">
+                                {% for error in form.email.errors %}
+                                    <span>{{ error }}</span>
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                    </div>
+                    <div class="mb-3">
+                        <label for="{{ form.password.id }}" class="form-label">Password</label>
+                        {{ form.password(class="form-control", placeholder="Choose a password") }}
+                        {% if form.password.errors %}
+                            <div class="text-danger">
+                                {% for error in form.password.errors %}
+                                    <span>{{ error }}</span>
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                    </div>
+                    <div class="mb-3">
+                        <label for="{{ form.confirm_password.id }}" class="form-label">Confirm Password</label>
+                        {{ form.confirm_password(class="form-control", placeholder="Confirm your password") }}
+                        {% if form.confirm_password.errors %}
+                            <div class="text-danger">
+                                {% for error in form.confirm_password.errors %}
+                                    <span>{{ error }}</span>
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                    </div>
+                    <div class="mb-3">
+                        <label for="{{ form.role.id }}" class="form-label">Account Type</label>
+                        {{ form.role(class="form-select") }}
+                        {% if form.role.errors %}
+                            <div class="text-danger">
+                                {% for error in form.role.errors %}
+                                    <span>{{ error }}</span>
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                    </div>
+                    <div class="d-grid gap-2">
+                        {{ form.submit(class="btn btn-primary") }}
+                    </div>
+                </form>
+            </div>
+            <div class="card-footer text-center">
+                <small>Already have an account? <a href="{{ url_for('login') }}">Login</a></small>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

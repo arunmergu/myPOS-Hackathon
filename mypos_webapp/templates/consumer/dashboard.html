@@ -1,0 +1,261 @@
+{% extends "layout.html" %}
+
+{% block title %}Dashboard{% endblock %}
+
+{% block content %}
+<div class="dashboard-header d-flex justify-content-between align-items-center mb-4">
+    <h1>Dashboard</h1>
+    <a href="{{ url_for('create_quotation') }}" class="btn btn-success">
+        <i class="bi bi-plus-lg"></i> Create New Quotation
+    </a>
+</div>
+
+<div class="row mb-4">
+    <div class="col-md-4">
+        <div class="card stat-card">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-start mb-3">
+                    <h3 class="card-title">Recent Quotations</h3>
+                    <i class="bi bi-file-text stat-icon"></i>
+                </div>
+                <h2 class="display-4 mb-1">{{ quotations|length }}</h2>
+                <p class="text-muted">+{{ quotations|selectattr('created_at', 'gt', last_month)|list|length }} from last month</p>
+                <div class="mt-3">
+                    <a href="{{ url_for('consumer_dashboard') }}" class="text-success">View All</a>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-4">
+        <div class="card stat-card">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-start mb-3">
+                    <h3 class="card-title">Pending Responses</h3>
+                    <i class="bi bi-hourglass-split stat-icon"></i>
+                </div>
+                <h2 class="display-4 mb-1">{{ quotations|selectattr('status', 'equalto', 'pending')|list|length }}</h2>
+                <p class="text-muted">Awaiting merchant responses</p>
+                <div class="mt-3">
+                    <a href="{{ url_for('consumer_dashboard') }}" class="text-success">View All</a>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-4">
+        <div class="card stat-card">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-start mb-3">
+                    <h3 class="card-title">Acceptance Rate</h3>
+                    <i class="bi bi-graph-up-arrow stat-icon"></i>
+                </div>
+                {% set pending_count = quotations|selectattr('status', 'equalto', 'pending')|list|length %}
+                {% set responded_count = quotations|selectattr('status', 'ne', 'pending')|list|length %}
+                {% set acceptance_rate = (responded_count / (responded_count + pending_count) * 100)|round if (responded_count + pending_count) > 0 else 0 %}
+                <h2 class="display-4 mb-1">{{ acceptance_rate }}%</h2>
+                <p class="text-muted">Based on last 30 days</p>
+                <div class="mt-3">
+                    <a href="#" class="text-success">See Details</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="card mb-4">
+    <div class="card-body">
+        <h2 class="h4 mb-3">Recent Activity</h2>
+        <p class="text-muted">Overview of recent quote and invoice activities.</p>
+        
+        {% if recent_activities %}
+            <div class="activity-timeline">
+                {% for activity in recent_activities %}
+                    <div class="activity-item">
+                        <div class="activity-icon">
+                            {% if activity.type == 'quotation_created' %}
+                                <i class="bi bi-file-plus"></i>
+                            {% elif activity.type == 'quotation_responded' %}
+                                <i class="bi bi-reply"></i>
+                            {% elif activity.type == 'payment_requested' %}
+                                <i class="bi bi-cash"></i>
+                            {% elif activity.type == 'payment_made' %}
+                                <i class="bi bi-credit-card"></i>
+                            {% endif %}
+                        </div>
+                        <div class="activity-content">
+                            <div class="activity-title">{{ activity.title }}</div>
+                            <div class="activity-time">{{ activity.time }}</div>
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+        {% else %}
+            <div class="text-center py-4 text-muted">
+                <i class="bi bi-calendar3 fs-1"></i>
+                <p class="mt-2">No recent activity to display.</p>
+            </div>
+        {% endif %}
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-body">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <h2 class="h4 mb-0">Recent Quotations</h2>
+            <a href="{{ url_for('consumer_dashboard') }}" class="text-success">View All</a>
+        </div>
+        
+        <p class="text-muted">Your most recent quotation requests.</p>
+        
+        {% if quotations %}
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th>Quotation #</th>
+                            <th>Title</th>
+                            <th>Date</th>
+                            <th>Status</th>
+                            <th>Amount</th>
+                            <th class="text-end">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for quotation in quotations[:5] %}
+                            <tr>
+                                <td>Q{{ quotation.id }}</td>
+                                <td>{{ quotation.title }}</td>
+                                <td>{{ quotation.created_at.strftime('%Y-%m-%d') }}</td>
+                                <td>
+                                    {% if quotation.status == 'pending' %}
+                                        <span class="badge bg-warning text-dark">Pending</span>
+                                    {% elif quotation.status == 'revised' %}
+                                        <span class="badge bg-info">Revised</span>
+                                    {% elif quotation.status == 'deposit_requested' %}
+                                        <span class="badge bg-primary">Payment Pending</span>
+                                    {% elif quotation.status == 'deposit_paid' %}
+                                        <span class="badge bg-success">Deposit Paid</span>
+                                    {% elif quotation.status == 'completed' %}
+                                        <span class="badge bg-secondary">Completed</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if quotation.revised_amount %}
+                                        €{{ quotation.revised_amount }}
+                                    {% else %}
+                                        --
+                                    {% endif %}
+                                </td>
+                                <td class="text-end">
+                                    <a href="{{ url_for('view_quotation', quotation_id=quotation.id) }}" class="btn btn-sm btn-outline-primary">View</a>
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        {% else %}
+            <div class="alert alert-info">
+                <p class="mb-0">You haven't created any quotations yet.</p>
+                <a href="{{ url_for('create_quotation') }}" class="btn btn-sm btn-primary mt-2">Create your first quotation</a>
+            </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
+
+{% block head %}
+<!-- Add Bootstrap Icons -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
+<style>
+    .dashboard-header {
+        padding: 0.5rem 0;
+    }
+    
+    .stat-card {
+        height: 100%;
+        border-radius: 10px;
+        border: none;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+    }
+    
+    .stat-card .card-title {
+        font-size: 0.9rem;
+        font-weight: 600;
+        color: #6c757d;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+    
+    .stat-icon {
+        font-size: 1.5rem;
+        color: #6c757d;
+    }
+    
+    .stat-card .display-4 {
+        font-size: 2.5rem;
+        font-weight: 700;
+        margin-bottom: 0;
+    }
+    
+    .activity-timeline {
+        margin-top: 20px;
+    }
+    
+    .activity-item {
+        display: flex;
+        margin-bottom: 15px;
+        padding-bottom: 15px;
+        border-bottom: 1px solid #f0f0f0;
+    }
+    
+    .activity-item:last-child {
+        border-bottom: none;
+    }
+    
+    .activity-icon {
+        width: 40px;
+        height: 40px;
+        background-color: #f8f9fa;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-right: 15px;
+    }
+    
+    .activity-icon i {
+        font-size: 1.2rem;
+        color: #6c757d;
+    }
+    
+    .activity-content {
+        flex: 1;
+    }
+    
+    .activity-title {
+        font-weight: 500;
+    }
+    
+    .activity-time {
+        font-size: 0.8rem;
+        color: #6c757d;
+        margin-top: 3px;
+    }
+    
+    .table th {
+        font-weight: 600;
+        color: #495057;
+    }
+    
+    .badge {
+        font-weight: 500;
+        padding: 0.4em 0.8em;
+    }
+</style>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/consumer.js') }}"></script>
+{% endblock %}

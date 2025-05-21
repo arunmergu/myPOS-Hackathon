@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>myPOS MarketPlace</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f8f9fa;
+            color: #333;
+        }
+        
+        .hero-section {
+            background: linear-gradient(135deg, #0062cc, #0096ff);
+            color: white;
+            padding: 3rem 0;
+            margin-bottom: 2rem;
+        }
+        
+        .marketplace-card {
+            border-radius: 10px;
+            border: none;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            height: 100%;
+            transition: transform 0.3s;
+        }
+        
+        .marketplace-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 6px 18px rgba(0,0,0,0.15);
+        }
+        
+        .feature-icon {
+            width: 60px;
+            height: 60px;
+            background-color: #e9f5ff;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 1rem;
+        }
+        
+        .feature-icon i {
+            font-size: 1.5rem;
+            color: #0d6efd;
+        }
+        
+        .btn-mypos {
+            background-color: #0062cc;
+            border-color: #0062cc;
+            color: white;
+        }
+        
+        .btn-mypos:hover {
+            background-color: #004999;
+            border-color: #004999;
+            color: white;
+        }
+        
+        .cta-card {
+            background: linear-gradient(135deg, #0062cc, #0096ff);
+            color: white;
+            border: none;
+            border-radius: 10px;
+        }
+        
+        footer {
+            margin-top: 3rem;
+            padding: 2rem 0;
+            background-color: #f1f1f1;
+        }
+    </style>
+</head>
+<body>
+    <!-- Hero Section -->
+    <div class="hero-section">
+        <div class="container">
+            <div class="row align-items-center">
+                <div class="col-md-7">
+                    <h1 class="display-4 fw-bold mb-3">myPOS MarketPlace</h1>
+                    <p class="lead mb-4">Connect consumers and merchants with AI-powered quotations and secure payments.</p>
+                    <div class="d-flex gap-3">
+                        <a href="{{ url_for('login') }}" class="btn btn-light btn-lg px-4">Login</a>
+                        <a href="{{ url_for('register') }}" class="btn btn-outline-light btn-lg px-4">Register</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Features Section -->
+    <div class="container mb-5">
+        <h2 class="text-center mb-4">How It Works</h2>
+        <div class="row g-4">
+            <div class="col-md-3">
+                <div class="text-center">
+                    <div class="feature-icon mx-auto">
+                        <i class="bi bi-file-earmark-text"></i>
+                    </div>
+                    <h4>Request a Quote</h4>
+                    <p class="text-muted">Describe your project and get AI-generated quotations.</p>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="text-center">
+                    <div class="feature-icon mx-auto">
+                        <i class="bi bi-clipboard-check"></i>
+                    </div>
+                    <h4>Merchant Review</h4>
+                    <p class="text-muted">Merchants customize and send personalized quotes.</p>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="text-center">
+                    <div class="feature-icon mx-auto">
+                        <i class="bi bi-credit-card"></i>
+                    </div>
+                    <h4>Secure Payment</h4>
+                    <p class="text-muted">Make deposits and payments through myPOS.</p>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="text-center">
+                    <div class="feature-icon mx-auto">
+                        <i class="bi bi-check-circle"></i>
+                    </div>
+                    <h4>Project Delivery</h4>
+                    <p class="text-muted">Track progress and communicate in one place.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- User Types Section -->
+    <div class="container mb-5">
+        <div class="row g-4">
+            <div class="col-md-6">
+                <div class="marketplace-card card p-4">
+                    <div class="card-body">
+                        <h3 class="card-title mb-3">For Consumers</h3>
+                        <p class="card-text mb-4">Find the right merchants and get clear, detailed quotations for your projects.</p>
+                        <ul class="list-group list-group-flush mb-4">
+                            <li class="list-group-item bg-transparent px-0">
+                                <i class="bi bi-check-circle-fill text-success me-2"></i> AI-generated project descriptions
+                            </li>
+                            <li class="list-group-item bg-transparent px-0">
+                                <i class="bi bi-check-circle-fill text-success me-2"></i> Connect with verified merchants
+                            </li>
+                            <li class="list-group-item bg-transparent px-0">
+                                <i class="bi bi-check-circle-fill text-success me-2"></i> Secure payment processing
+                            </li>
+                            <li class="list-group-item bg-transparent px-0">
+                                <i class="bi bi-check-circle-fill text-success me-2"></i> Track project status
+                            </li>
+                        </ul>
+                        <a href="{{ url_for('register') }}?role=consumer" class="btn btn-mypos">Register as Consumer</a>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="marketplace-card card p-4">
+                    <div class="card-body">
+                        <h3 class="card-title mb-3">For Merchants</h3>
+                        <p class="card-text mb-4">Receive project requests, provide quotations, and manage clients in one place.</p>
+                        <ul class="list-group list-group-flush mb-4">
+                            <li class="list-group-item bg-transparent px-0">
+                                <i class="bi bi-check-circle-fill text-success me-2"></i> Review and customize quotes
+                            </li>
+                            <li class="list-group-item bg-transparent px-0">
+                                <i class="bi bi-check-circle-fill text-success me-2"></i> Request deposits with ease
+                            </li>
+                            <li class="list-group-item bg-transparent px-0">
+                                <i class="bi bi-check-circle-fill text-success me-2"></i> Track payments and invoices
+                            </li>
+                            <li class="list-group-item bg-transparent px-0">
+                                <i class="bi bi-check-circle-fill text-success me-2"></i> Manage client relationships
+                            </li>
+                        </ul>
+                        <a href="{{ url_for('register') }}?role=merchant" class="btn btn-mypos">Register as Merchant</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- CTA Section -->
+    <div class="container mb-5">
+        <div class="cta-card card">
+            <div class="card-body p-4 text-center">
+                <h2 class="card-title mb-3">Ready to streamline your business?</h2>
+                <p class="card-text mb-4">Join myPOS MarketPlace today and transform how you handle quotations and payments.</p>
+                <div class="d-flex justify-content-center gap-3">
+                    <a href="{{ url_for('login') }}" class="btn btn-light btn-lg px-4">Login</a>
+                    <a href="{{ url_for('register') }}" class="btn btn-outline-light btn-lg px-4">Register</a>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Footer -->
+    <footer>
+        <div class="container">
+            <div class="row">
+                <div class="col-md-6">
+                    <h5>myPOS MarketPlace</h5>
+                    <p class="text-muted">The intelligent platform for quotations and payments.</p>
+                </div>
+            </div>
+        </div>
+    </footer>
+    
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

@@ -1,0 +1,113 @@
+{% extends "layout.html" %}
+
+{% block title %}Quotations{% endblock %}
+
+{% block content %}
+<div class="dashboard-header d-flex justify-content-between align-items-center mb-4">
+    <h1>Quotations</h1>
+    <a href="{{ url_for('create_quotation') }}" class="btn btn-success">
+        <i class="bi bi-plus-lg"></i> Create New Quotation
+    </a>
+</div>
+
+<div class="card">
+    <div class="card-body">
+        <h2 class="h4 mb-3">All Quotations</h2>
+        <p class="text-muted">Manage and track all your service quotations.</p>
+        
+        <div class="mb-4">
+            <div class="float-end">
+                <label for="filter-status" class="form-label me-2">Filter by Status:</label>
+                <select id="filter-status" class="form-select form-select-sm d-inline-block w-auto">
+                    <option value="all">All Quotations</option>
+                    <option value="pending">Pending</option>
+                    <option value="revised">Revised</option>
+                    <option value="deposit_requested">Payment Pending</option>
+                    <option value="deposit_paid">Deposit Paid</option>
+                    <option value="completed">Completed</option>
+                </select>
+            </div>
+        </div>
+        
+        {% if quotations %}
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th>Quotation #</th>
+                            <th>Title</th>
+                            <th>Date</th>
+                            <th>Merchant</th>
+                            <th>Amount</th>
+                            <th>Status</th>
+                            <th class="text-end">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for quotation in quotations %}
+                            <tr class="quotation-row" data-status="{{ quotation.status }}">
+                                <td>Q{{ quotation.id }}</td>
+                                <td>{{ quotation.title }}</td>
+                                <td>{{ quotation.created_at.strftime('%Y-%m-%d') }}</td>
+                                <td>
+                                    {% if quotation.status == 'pending' %}
+                                        <span class="text-muted">Pending Responses</span>
+                                    {% else %}
+                                        {{ quotation.merchant.username }}
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if quotation.revised_amount %}
+                                        €{{ quotation.revised_amount }}
+                                    {% else %}
+                                        --
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if quotation.status == 'pending' %}
+                                        <span class="badge bg-warning text-dark">Pending</span>
+                                    {% elif quotation.status == 'revised' %}
+                                        <span class="badge bg-info">Revised</span>
+                                    {% elif quotation.status == 'deposit_requested' %}
+                                        <span class="badge bg-primary">Payment Pending</span>
+                                    {% elif quotation.status == 'deposit_paid' %}
+                                        <span class="badge bg-success">Deposit Paid</span>
+                                    {% elif quotation.status == 'completed' %}
+                                        <span class="badge bg-secondary">Completed</span>
+                                    {% endif %}
+                                </td>
+                                <td class="text-end">
+                                    <div class="dropdown">
+                                        <button class="btn btn-sm btn-outline-secondary" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                            <i class="bi bi-three-dots"></i>
+                                        </button>
+                                        <ul class="dropdown-menu dropdown-menu-end">
+                                            <li><a class="dropdown-item" href="{{ url_for('view_quotation', quotation_id=quotation.id) }}">View Details</a></li>
+                                            {% if quotation.status == 'deposit_requested' %}
+                                                {% for transaction in quotation.transactions %}
+                                                    {% if transaction.status == 'pending' %}
+                                                        <li><a class="dropdown-item" href="{{ transaction.payment_url }}" target="_blank">Pay Now</a></li>
+                                                    {% endif %}
+                                                {% endfor %}
+                                            {% endif %}
+                                        </ul>
+                                    </div>
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        {% else %}
+            <div class="alert alert-info">
+                <p class="mb-0">You haven't created any quotations yet.</p>
+                <a href="{{ url_for('create_quotation') }}" class="btn btn-sm btn-primary mt-2">Create your first quotation</a>
+            </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/consumer.js') }}"></script>
+{% endblock %}

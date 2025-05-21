@@ -1,0 +1,59 @@
+{% extends "layout.html" %}
+
+{% block title %}Create Quotation{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-8 offset-md-2">
+        <div class="card">
+            <div class="card-header bg-primary text-white">
+                <h2 class="mb-0">Create New Quotation</h2>
+            </div>
+            <div class="card-body">
+                <div class="alert alert-info">
+                    <p>Your quotation will be sent to all available merchants in the system.</p>
+                </div>
+                <form method="POST" action="{{ url_for('create_quotation') }}">
+                    {{ form.hidden_tag() }}
+                    <div class="mb-3">
+                        <label for="{{ form.title.id }}" class="form-label">Quotation Title</label>
+                        {{ form.title(class="form-control", placeholder="E.g., Website Redesign Project") }}
+                        {% if form.title.errors %}
+                            <div class="text-danger">
+                                {% for error in form.title.errors %}
+                                    <span>{{ error }}</span>
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                    </div>
+                    <div class="mb-3">
+                        <label for="{{ form.product_type.id }}" class="form-label">Product/Service Type</label>
+                        {{ form.product_type(class="form-control", placeholder="E.g., Web Development, Furniture, Consulting") }}
+                        {% if form.product_type.errors %}
+                            <div class="text-danger">
+                                {% for error in form.product_type.errors %}
+                                    <span>{{ error }}</span>
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                    </div>
+                    <div class="mb-3">
+                        <label for="{{ form.description.id }}" class="form-label">Description</label>
+                        {{ form.description(class="form-control", rows=5, placeholder="Describe the product or service you need...") }}
+                        {% if form.description.errors %}
+                            <div class="text-danger">
+                                {% for error in form.description.errors %}
+                                    <span>{{ error }}</span>
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                    </div>
+                    <div class="d-grid gap-2">
+                        {{ form.submit(class="btn btn-primary") }}
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,210 @@
+{% extends "layout.html" %}
+
+{% block title %}View Quotation{% endblock %}
+
+{% block content %}
+<div class="mb-3">
+    <a href="{{ url_for('consumer_dashboard') }}" class="btn btn-outline-secondary">← Back to Dashboard</a>
+</div>
+
+<div class="card mb-4">
+    <div class="card-header d-flex justify-content-between align-items-center bg-primary text-white">
+        <h2 class="mb-0">{{ quotation.title }}</h2>
+        <span class="quotation-status status-{{ quotation.status }}">{{ quotation.status.replace('_', ' ').title() }}</span>
+    </div>
+    <div class="card-body">
+        <div class="row">
+            <div class="col-md-6">
+                <h4>Request Details</h4>
+                <table class="table table-bordered">
+                    <tr>
+                        <th>Product/Service:</th>
+                        <td>{{ quotation.product_type }}</td>
+                    </tr>
+                    <tr>
+                        <th>Description:</th>
+                        <td>{{ quotation.description }}</td>
+                    </tr>
+                    {% if quotation.revised_amount %}
+                        <tr>
+                            <th>Revised Amount:</th>
+                            <td>€{{ quotation.revised_amount }}</td>
+                        </tr>
+                    {% endif %}
+                    <tr>
+                        <th>Created:</th>
+                        <td>{{ quotation.created_at.strftime('%Y-%m-%d %H:%M') }}</td>
+                    </tr>
+                    <tr>
+                        <th>Last Updated:</th>
+                        <td>{{ quotation.updated_at.strftime('%Y-%m-%d %H:%M') }}</td>
+                    </tr>
+                    {% if quotation.status != 'pending' %}
+                        <tr>
+                            <th>Merchant:</th>
+                            <td>{{ quotation.merchant.username }}</td>
+                        </tr>
+                    {% endif %}
+                </table>
+            </div>
+            <div class="col-md-6">
+                <h4>Status Information</h4>
+                {% if quotation.status == 'pending' %}
+                    <div class="alert alert-warning">
+                        <strong>Pending Review</strong>
+                        <p>Your quotation request has been sent to {{ merchant_count }} merchants and is awaiting review.</p>
+                        {% if responded_count > 0 %}
+                            <p>{{ responded_count }} merchant(s) have responded to your request.</p>
+                            <div class="mt-3">
+                                <strong>View responses from:</strong>
+                                <ul class="list-group mt-2">
+                                    {% for q in active_quotations %}
+                                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                                            <a href="{{ url_for('view_quotation', quotation_id=q.id) }}">{{ q.merchant.username }}</a>
+                                            <span class="badge bg-{{ q.status }}">{{ q.status|replace('_', ' ')|title }}</span>
+                                        </li>
+                                    {% endfor %}
+                                </ul>
+                            </div>
+                        {% else %}
+                            <p>No merchants have responded yet. You will be notified when a merchant responds.</p>
+                        {% endif %}
+                    </div>
+                {% elif quotation.status == 'revised' %}
+                    <div class="alert alert-info">
+                        <strong>Quotation Revised</strong>
+                        <p>{{ quotation.merchant.username }} has reviewed your request and provided a detailed quotation.</p>
+                        {% if quotation.payment_terms %}
+                            <strong>Payment Terms:</strong>
+                            <p>{{ quotation.payment_terms }}</p>
+                        {% endif %}
+                    </div>
+                {% elif quotation.status == 'deposit_requested' %}
+                    <div class="alert alert-warning">
+                        <strong>Deposit Requested</strong>
+                        <p>{{ quotation.merchant.username }} has requested a deposit to proceed with this quotation.</p>
+                        {% for transaction in quotation.transactions %}
+                            {% if transaction.status == 'pending' %}
+                                <a href="{{ transaction.payment_url }}" class="btn btn-primary mt-2" target="_blank">Pay Deposit of €{{ transaction.amount }}</a>
+                            {% endif %}
+                        {% endfor %}
+                    </div>
+                {% elif quotation.status == 'deposit_paid' %}
+                    <div class="alert alert-success">
+                        <strong>Deposit Paid</strong>
+                        <p>Your deposit has been received. {{ quotation.merchant.username }} will begin work on your project.</p>
+                    </div>
+                {% elif quotation.status == 'completed' %}
+                    <div class="alert alert-success">
+                        <strong>Completed</strong>
+                        <p>This quotation has been completed.</p>
+                    </div>
+                {% endif %}
+                
+                {% if quotation.merchant_notes and quotation.status != 'pending' %}
+                    <div class="card mt-3">
+                        <div class="card-header">Merchant Notes</div>
+                        <div class="card-body">
+                            {{ quotation.merchant_notes }}
+                        </div>
+                    </div>
+                {% endif %}
+                
+                {% if responded_count > 1 and quotation.status != 'pending' %}
+                    <div class="card mt-3">
+                        <div class="card-header">Other Responses</div>
+                        <div class="card-body">
+                            <p>You have received responses from {{ responded_count }} merchants for this request.</p>
+                            <ul class="list-group">
+                                {% for q in active_quotations %}
+                                    {% if q.id != quotation.id %}
+                                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                                            <a href="{{ url_for('view_quotation', quotation_id=q.id) }}">{{ q.merchant.username }}</a>
+                                            <span class="badge bg-{{ q.status }}">{{ q.status|replace('_', ' ')|title }}</span>
+                                        </li>
+                                    {% endif %}
+                                {% endfor %}
+                            </ul>
+                        </div>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+        
+        {% if quotation.status != 'pending' %}
+            <div class="mt-4">
+                <h4>Quotation Details</h4>
+                <div class="quotation-content" id="markdown-content-{{ quotation.id }}">
+                    <!-- Content will be rendered by JavaScript -->
+                </div>
+            </div>
+        {% else %}
+            <div class="mt-4 alert alert-info">
+                <h4 class="alert-heading">Quotation Pending</h4>
+                <p>Your request is currently under review by merchants. A detailed quotation will be available once a merchant completes their review.</p>
+            </div>
+        {% endif %}
+    </div>
+</div>
+
+{% if quotation.transactions %}
+    <div class="card mb-4">
+        <div class="card-header bg-info text-white">
+            <h3 class="mb-0">Payment Transactions</h3>
+        </div>
+        <div class="card-body">
+            <table class="table table-striped">
+                <thead>
+                    <tr>
+                        <th>Transaction ID</th>
+                        <th>Amount</th>
+                        <th>Status</th>
+                        <th>Date</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for transaction in quotation.transactions %}
+                        <tr>
+                            <td>{{ transaction.transaction_id }}</td>
+                            <td>€{{ transaction.amount }}</td>
+                            <td>
+                                {% if transaction.status == 'pending' %}
+                                    <span class="badge bg-warning">Pending</span>
+                                {% elif transaction.status == 'completed' %}
+                                    <span class="badge bg-success">Completed</span>
+                                {% elif transaction.status == 'failed' %}
+                                    <span class="badge bg-danger">Failed</span>
+                                {% endif %}
+                            </td>
+                            <td>{{ transaction.created_at.strftime('%Y-%m-%d %H:%M') }}</td>
+                            <td>
+                                {% if transaction.status == 'pending' %}
+                                    <a href="{{ transaction.payment_url }}" class="btn btn-sm btn-primary" target="_blank">Pay Now</a>
+                                {% endif %}
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+{% endif %}
+{% endblock %}
+
+{% block scripts %}
+{% if quotation.status != 'pending' %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const markdownContent = `{{ quotation.ai_generated_content|safe|replace('\n', '\\n')|replace('"', '\\"') }}`;
+        document.getElementById('markdown-content-{{ quotation.id }}').innerHTML = marked.parse(markdownContent);
+        
+        // Add table styling to any tables in the content
+        const tables = document.querySelectorAll('#markdown-content-{{ quotation.id }} table');
+        tables.forEach(table => {
+            table.classList.add('table', 'table-bordered', 'table-striped', 'mt-3', 'mb-3');
+        });
+    });
+</script>
+{% endif %}
+{% endblock %}

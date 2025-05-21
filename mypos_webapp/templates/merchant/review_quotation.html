@@ -1,0 +1,255 @@
+{% extends "layout.html" %}
+
+{% block title %}Review Quotation{% endblock %}
+
+{% block content %}
+<div class="mb-3">
+    <a href="{{ url_for('merchant_dashboard') }}" class="btn btn-outline-secondary">← Back to Dashboard</a>
+</div>
+
+<div class="card mb-4">
+    <div class="card-header bg-primary text-white">
+        <h2 class="mb-0">Review Quotation: {{ quotation.title }}</h2>
+    </div>
+    <div class="card-body">
+        <div class="row mb-4">
+            <div class="col-md-6">
+                <h4>Quotation Details</h4>
+                <table class="table table-bordered">
+                    <tr>
+                        <th>Client:</th>
+                        <td>{{ quotation.consumer.username }}</td>
+                    </tr>
+                    <tr>
+                        <th>Product/Service:</th>
+                        <td>{{ quotation.product_type }}</td>
+                    </tr>
+                    <tr>
+                        <th>Description:</th>
+                        <td>{{ quotation.description }}</td>
+                    </tr>
+                    <tr>
+                        <th>Created:</th>
+                        <td>{{ quotation.created_at.strftime('%Y-%m-%d %H:%M') }}</td>
+                    </tr>
+                </table>
+            </div>
+            <div class="col-md-6">
+                <h4>AI-Generated Quotation</h4>
+                <div class="quotation-content" id="markdown-content-{{ quotation.id }}">
+                    <!-- Content will be rendered by JavaScript -->
+                </div>
+            </div>
+        </div>
+        
+        <hr>
+        <h4 class="mb-3">Edit Quotation Details</h4>
+        <div class="alert alert-info mb-4">
+            <strong>Edit Services:</strong> You can modify the service details below. Click "Add Row" to add more services or "Remove" to delete a service.
+        </div>
+
+        <div id="editable-services-container">
+            <table class="table table-bordered table-striped" id="editable-services-table">
+                <thead>
+                    <tr>
+                        <th>Service/Item</th>
+                        <th>Description</th>
+                        <th>Estimated Cost (€)</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="editable-services-body">
+                    <!-- Rows will be added here by JavaScript -->
+                </tbody>
+                <tfoot>
+                    <tr>
+                        <th colspan="2" class="text-end">Total</th>
+                        <th>€<span id="total-cost">0.00</span></th>
+                        <th></th>
+                    </tr>
+                </tfoot>
+            </table>
+            <button type="button" id="add-service-row" class="btn btn-secondary">Add Service Row</button>
+        </div>
+
+        <hr>
+        <h4 class="mt-4">Finalize Quotation</h4>
+        <form method="POST" action="{{ url_for('review_quotation', quotation_id=quotation.id) }}" id="quotation-form">
+            {{ form.hidden_tag() }}
+            <input type="hidden" name="services_data" id="services-data-input">
+            
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="mb-3">
+                        <label for="{{ form.amount.id }}" class="form-label">Revised Total Amount (€)</label>
+                        {{ form.amount(class="form-control", readonly=true) }}
+                        {% if form.amount.errors %}
+                            <div class="text-danger">
+                                {% for error in form.amount.errors %}
+                                    <span>{{ error }}</span>
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                        <div class="form-text">This will be automatically calculated from the services table.</div>
+                    </div>
+                    <div class="mb-3">
+                        <label for="{{ form.payment_terms.id }}" class="form-label">Payment Terms</label>
+                        {{ form.payment_terms(class="form-control", rows=4, placeholder="E.g., 30% deposit, 70% upon completion") }}
+                        {% if form.payment_terms.errors %}
+                            <div class="text-danger">
+                                {% for error in form.payment_terms.errors %}
+                                    <span>{{ error }}</span>
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="mb-3">
+                        <label for="{{ form.notes.id }}" class="form-label">Notes to Client</label>
+                        {{ form.notes(class="form-control", rows=8, placeholder="Add any additional information for the client...") }}
+                        {% if form.notes.errors %}
+                            <div class="text-danger">
+                                {% for error in form.notes.errors %}
+                                    <span>{{ error }}</span>
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+            <div class="d-grid gap-2 col-md-4 mx-auto mt-3">
+                {{ form.submit(class="btn btn-primary btn-lg", value="Update Quotation") }}
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // 1. Render the original markdown content
+        const markdownContent = `{{ quotation.ai_generated_content|safe|replace('\n', '\\n')|replace('"', '\\"') }}`;
+        document.getElementById('markdown-content-{{ quotation.id }}').innerHTML = marked.parse(markdownContent);
+        
+        // Add table styling to any tables in the content
+        const tables = document.querySelectorAll('#markdown-content-{{ quotation.id }} table');
+        tables.forEach(table => {
+            table.classList.add('table', 'table-bordered', 'table-striped', 'mt-3', 'mb-3');
+        });
+        
+        // 2. Try to extract the table data from the AI-generated content
+        let servicesData = [];
+        try {
+            // Find the table in the rendered content
+            const renderedTable = document.querySelector('#markdown-content-{{ quotation.id }} table');
+            
+            if (renderedTable) {
+                // Get all rows except header and total row
+                const rows = Array.from(renderedTable.querySelectorAll('tbody tr'));
+                
+                // Extract data from each row
+                rows.forEach(row => {
+                    const cells = row.querySelectorAll('td');
+                    // Skip if it's likely the total row
+                    if (cells.length >= 3 && !cells[0].textContent.trim().toLowerCase().includes('total')) {
+                        const service = {
+                            name: cells[0]?.textContent?.trim() || '',
+                            description: cells[1]?.textContent?.trim() || '',
+                            cost: parseFloat((cells[2]?.textContent || '0').replace(/[^0-9.-]+/g, '')) || 0
+                        };
+                        servicesData.push(service);
+                    }
+                });
+            }
+            
+            // If we couldn't extract data, provide some default rows
+            if (servicesData.length === 0) {
+                servicesData = [
+                    { name: 'Service 1', description: 'Description of service 1', cost: 0 },
+                    { name: 'Service 2', description: 'Description of service 2', cost: 0 }
+                ];
+            }
+        } catch (e) {
+            console.error('Error extracting table data:', e);
+            servicesData = [
+                { name: 'Service 1', description: 'Description of service 1', cost: 0 },
+                { name: 'Service 2', description: 'Description of service 2', cost: 0 }
+            ];
+        }
+        
+        // 3. Populate the editable table with the extracted data
+        const tableBody = document.getElementById('editable-services-body');
+        
+        // Function to add a service row
+        function addServiceRow(service = { name: '', description: '', cost: 0 }) {
+            const row = document.createElement('tr');
+            row.innerHTML = `
+                <td>
+                    <input type="text" class="form-control service-name" value="${service.name}">
+                </td>
+                <td>
+                    <textarea class="form-control service-description" rows="2">${service.description}</textarea>
+                </td>
+                <td>
+                    <input type="number" step="0.01" min="0" class="form-control service-cost" value="${service.cost}">
+                </td>
+                <td>
+                    <button type="button" class="btn btn-danger remove-row">Remove</button>
+                </td>
+            `;
+            tableBody.appendChild(row);
+            
+            // Add event listener to the remove button
+            row.querySelector('.remove-row').addEventListener('click', function() {
+                row.remove();
+                updateTotal();
+            });
+            
+            // Add event listeners to update the total when cost changes
+            row.querySelector('.service-cost').addEventListener('input', updateTotal);
+            
+            return row;
+        }
+        
+        // Add initial service rows
+        servicesData.forEach(service => addServiceRow(service));
+        
+        // 4. Add functionality to add new rows
+        document.getElementById('add-service-row').addEventListener('click', function() {
+            addServiceRow();
+            updateTotal();
+        });
+        
+        // 5. Function to update the total cost
+        function updateTotal() {
+            const costs = Array.from(document.querySelectorAll('.service-cost')).map(input => 
+                parseFloat(input.value) || 0
+            );
+            const total = costs.reduce((sum, cost) => sum + cost, 0);
+            document.getElementById('total-cost').textContent = total.toFixed(2);
+            document.getElementById('amount').value = total.toFixed(2);
+        }
+        
+        // Initialize total
+        updateTotal();
+        
+        // 6. Handle form submission to include the services data
+        document.getElementById('quotation-form').addEventListener('submit', function(e) {
+            // Collect all service data
+            const rows = Array.from(tableBody.querySelectorAll('tr'));
+            const services = rows.map(row => {
+                return {
+                    name: row.querySelector('.service-name').value,
+                    description: row.querySelector('.service-description').value,
+                    cost: parseFloat(row.querySelector('.service-cost').value) || 0
+                };
+            });
+            
+            // Set the hidden input value with JSON data
+            document.getElementById('services-data-input').value = JSON.stringify(services);
+        });
+    });
+</script>
+{% endblock %}

@@ -1,0 +1,138 @@
+{% extends "layout.html" %}
+
+{% block title %}Request Deposit{% endblock %}
+
+{% block content %}
+<div class="mb-3">
+    <a href="{{ url_for('merchant_dashboard') }}" class="btn btn-outline-secondary">← Back to Dashboard</a>
+</div>
+
+<div class="card mb-4">
+    <div class="card-header bg-warning text-dark">
+        <h2 class="mb-0">Request Deposit: {{ quotation.title }}</h2>
+    </div>
+    <div class="card-body">
+        <div class="row mb-4">
+            <div class="col-md-6">
+                <h4>Quotation Summary</h4>
+                <table class="table table-bordered">
+                    <tr>
+                        <th>Client:</th>
+                        <td>{{ quotation.consumer.username }}</td>
+                    </tr>
+                    <tr>
+                        <th>Product/Service:</th>
+                        <td>{{ quotation.product_type }}</td>
+                    </tr>
+                    <tr>
+                        <th>Revised Amount:</th>
+                        <td>€{{ quotation.revised_amount }}</td>
+                    </tr>
+                    <tr>
+                        <th>Payment Terms:</th>
+                        <td>{{ quotation.payment_terms }}</td>
+                    </tr>
+                </table>
+            </div>
+            <div class="col-md-6">
+                <div class="alert alert-info">
+                    <h4 class="alert-heading">Request a Deposit</h4>
+                    <p>You are about to request a deposit from the client. This will trigger a payment request via the MyPOS payment system.</p>
+                    <p>The client will receive an email with a payment link, and you will be notified once the payment is completed.</p>
+                </div>
+            </div>
+        </div>
+        
+        <h4>Deposit Details</h4>
+        <form method="POST" action="{{ url_for('request_deposit', quotation_id=quotation.id) }}">
+            {{ form.hidden_tag() }}
+            <!-- Hidden input for total amount -->
+            <input type="text" class="form-control" value="{{ quotation.revised_amount }}" id="amount" style="display: none;">
+            
+            <div class="row mb-4">
+                <div class="col-md-6">
+                    <div class="card">
+                        <div class="card-header bg-light">
+                            <h5 class="mb-0">Set Deposit Percentage</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="mb-3">
+                                <label class="form-label">Common Percentages:</label>
+                                <div class="btn-group w-100 mb-2" role="group">
+                                    <button type="button" class="btn btn-outline-primary percentage-preset" data-percentage="10">10%</button>
+                                    <button type="button" class="btn btn-outline-primary percentage-preset" data-percentage="20">20%</button>
+                                    <button type="button" class="btn btn-outline-primary percentage-preset active" data-percentage="30">30%</button>
+                                    <button type="button" class="btn btn-outline-primary percentage-preset" data-percentage="40">40%</button>
+                                    <button type="button" class="btn btn-outline-primary percentage-preset" data-percentage="50">50%</button>
+                                </div>
+                                
+                                <label for="deposit-percent" class="form-label">Custom Percentage:</label>
+                                <div class="input-group">
+                                    <input type="number" id="deposit-percent" class="form-control" value="30" min="1" max="100">
+                                    <span class="input-group-text">%</span>
+                                </div>
+                                <div class="form-text">Percentage of the revised amount (€{{ quotation.revised_amount }})</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="col-md-6">
+                    <div class="card">
+                        <div class="card-header bg-light">
+                            <h5 class="mb-0">Deposit Summary</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="mb-3">
+                                <label for="{{ form.amount.id }}" class="form-label">Deposit Amount to Request:</label>
+                                <div class="input-group">
+                                    <span class="input-group-text">€</span>
+                                    {{ form.amount(class="form-control", id="deposit-amount") }}
+                                </div>
+                                {% if form.amount.errors %}
+                                    <div class="text-danger">
+                                        {% for error in form.amount.errors %}
+                                            <span>{{ error }}</span>
+                                        {% endfor %}
+                                    </div>
+                                {% endif %}
+                            </div>
+                            
+                            <div class="alert alert-primary text-center mb-0">
+                                <div>
+                                    <span class="h6">Total Quote Amount:</span> <strong>€{{ quotation.revised_amount }}</strong>
+                                </div>
+                                <div class="h4 mt-2">
+                                    <span>Deposit Amount:</span> <strong id="deposit-display">€0.00</strong>
+                                </div>
+                                <div class="text-muted small">
+                                    Remaining Balance: €{{ '%.2f'|format(quotation.revised_amount) }}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="mb-3">
+                <label for="{{ form.notes.id }}" class="form-label">Additional Notes for Payment Request</label>
+                {{ form.notes(class="form-control", rows=4, placeholder="Add any information related to this payment request...") }}
+                {% if form.notes.errors %}
+                    <div class="text-danger">
+                        {% for error in form.notes.errors %}
+                            <span>{{ error }}</span>
+                        {% endfor %}
+                    </div>
+                {% endif %}
+            </div>
+            <div class="d-grid gap-2 col-md-4 mx-auto mt-3">
+                {{ form.submit(class="btn btn-warning btn-lg", value="Send Deposit Request") }}
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/merchant.js') }}"></script>
+{% endblock %}
